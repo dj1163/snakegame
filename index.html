@@ -15,51 +15,58 @@
             justify-content: center;
             height: 100vh;
             overflow: hidden;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
+            touch-action: none; /* Prevents screen bouncing on mobile */
         }
         #game-container {
             position: relative;
             width: 90vw;
             max-width: 400px;
             aspect-ratio: 1 / 1;
+            border: 4px solid #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         canvas {
             width: 100%;
             height: 100%;
             background-color: #000;
-            border: 2px solid #555;
             display: block;
         }
         #score-board {
             margin-bottom: 10px;
-            font-size: 24px;
+            font-size: 28px;
+            font-weight: bold;
         }
-        /* Overlay for the Start/Game Over screen */
+        /* START/GAME OVER OVERLAY */
         #overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 10;
+            text-align: center;
         }
+        h1 { margin-bottom: 20px; font-size: 32px; }
         button {
-            padding: 15px 30px;
+            padding: 15px 40px;
             font-size: 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 50px;
             cursor: pointer;
+            box-shadow: 0 4px #2e6031;
         }
         button:active {
-            background-color: #3e8e41;
+            transform: translateY(2px);
+            box-shadow: 0 2px #2e6031;
         }
     </style>
 </head>
@@ -68,59 +75,79 @@
     <div id="score-board">Score: 0</div>
     
     <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
         <div id="overlay">
-            <h1>University Snake</h1>
-            <button id="startBtn">Start Game</button>
+            <h1 id="status-text">University Snake</h1>
+            <button onclick="startGame()">START GAME</button>
         </div>
+        <canvas id="gameCanvas"></canvas>
     </div>
 
-    <p style="font-size: 12px; margin-top: 10px;">Swipe to move</p>
+    <p style="font-size: 14px; margin-top: 15px; color: #888;">Swipe to turn the snake</p>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const scoreElement = document.getElementById("score-board");
         const overlay = document.getElementById("overlay");
-        const startBtn = document.getElementById("startBtn");
+        const statusText = document.getElementById("status-text");
 
-        // CONFIGURATION
-        const gridSize = 20; // Internal logical units
-        canvas.width = 400;  // Resolution (Internal)
+        // SETTINGS
+        const gridSize = 20; 
+        canvas.width = 400;  
         canvas.height = 400;
 
         let score = 0;
-        let snake = [{x: 10, y: 10}, {x: 10, y: 11}, {x: 10, y: 12}];
-        let food = {x: 5, y: 5};
+        let snake = [];
+        let food = {x: 0, y: 0};
         let dx = 0;
-        let dy = -1;
+        let dy = 0;
         let nextDx = 0;
-        let nextDy = -1;
+        let nextDy = 0;
         let gameRunning = false;
+        let gameLoopTimeout;
 
-        // UNIVERSITY ICON
+        // LOAD UNIVERSITY ICON
         const uniIcon = new Image();
-        // Replace the URL below with your University's Logo (PNG with transparent background works best)
-        uniIcon.src = "https://upload.wikimedia.org/wikipedia/en/thumb/3/3a/Harvard_University_coat_of_arms.svg/200px-Harvard_University_coat_of_arms.svg.png"; 
+        // Replace this URL with your university's logo
+        uniIcon.src = "https://upload.wikimedia.org/wikipedia/en/thumb/3/3a/Harvard_University_coat_of_arms.svg/200px-Harvard_University_coat_of_arms.svg.png";
 
-        // GAME LOOP
+        function startGame() {
+            // Reset Variables
+            score = 0;
+            scoreElement.innerHTML = "Score: 0";
+            snake = [
+                {x: 10, y: 10},
+                {x: 10, y: 11},
+                {x: 10, y: 12}
+            ];
+            // Start by moving UP
+            dx = 0; dy = -1;
+            nextDx = 0; nextDy = -1;
+            
+            createFood();
+            overlay.style.display = "none";
+            gameRunning = true;
+            
+            // Clear any existing loops before starting a new one
+            clearTimeout(gameLoopTimeout);
+            main();
+        }
+
         function main() {
             if (!gameRunning) return;
 
             if (didGameEnd()) {
-                gameRunning = false;
                 showGameOver();
+                return;
             }
 
-            setTimeout(function onTick() {
-                if (gameRunning) {
-                    clearCanvas();
-                    drawFood();
-                    advanceSnake();
-                    drawSnake();
-                    main();
-                }
-            }, 100);
+            gameLoopTimeout = setTimeout(function onTick() {
+                clearCanvas();
+                drawFood();
+                advanceSnake();
+                drawSnake();
+                main();
+            }, 100); // Speed: lower is faster
         }
 
         function clearCanvas() {
@@ -130,7 +157,7 @@
 
         function drawSnake() {
             snake.forEach((part, index) => {
-                ctx.fillStyle = index === 0 ? "#4CAF50" : "#81C784"; // Head is darker green
+                ctx.fillStyle = (index === 0) ? "#4CAF50" : "#81C784";
                 ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
             });
         }
@@ -152,18 +179,27 @@
 
         function didGameEnd() {
             const head = snake[0];
-            const hitWall = head.x < 0 || head.x >= canvas.width / gridSize || head.y < 0 || head.y >= canvas.height / gridSize;
+            const hitWall = head.x < 0 || head.x >= (canvas.width / gridSize) || head.y < 0 || head.y >= (canvas.height / gridSize);
             const hitSelf = snake.slice(1).some(part => part.x === head.x && part.y === head.y);
             return hitWall || hitSelf;
+        }
+
+        function showGameOver() {
+            gameRunning = false;
+            statusText.innerHTML = "GAME OVER!<br>Score: " + score;
+            overlay.style.display = "flex";
         }
 
         function createFood() {
             food.x = Math.floor(Math.random() * (canvas.width / gridSize));
             food.y = Math.floor(Math.random() * (canvas.height / gridSize));
+            // Make sure food doesn't spawn on snake body
+            snake.forEach(part => {
+                if (part.x === food.x && part.y === food.y) createFood();
+            });
         }
 
         function drawFood() {
-            // Draw the University Icon instead of a circle
             if (uniIcon.complete) {
                 ctx.drawImage(uniIcon, food.x * gridSize, food.y * gridSize, gridSize, gridSize);
             } else {
@@ -172,60 +208,42 @@
             }
         }
 
-        function resetGame() {
-            score = 0;
-            scoreElement.innerHTML = "Score: 0";
-            snake = [{x: 10, y: 10}, {x: 10, y: 11}, {x: 10, y: 12}];
-            nextDx = 0; nextDy = -1;
-            dx = 0; dy = -1;
-            createFood();
-        }
-
-        function startGame() {
-            resetGame();
-            gameRunning = true;
-            overlay.style.display = "none";
-            main();
-        }
-
-        function showGameOver() {
-            overlay.style.display = "flex";
-            overlay.innerHTML = `<h1>Game Over!</h1><p>Score: ${score}</p><button id="restartBtn">Play Again</button>`;
-            document.getElementById("restartBtn").addEventListener("click", startGame);
-        }
-
-        // TOUCH CONTROLS (Swipe Detection)
+        // SWIPE CONTROLS
         let touchStartX = 0;
         let touchStartY = 0;
 
         window.addEventListener('touchstart', e => {
-            if (gameRunning) {
-                touchStartX = e.changedTouches[0].screenX;
-                touchStartY = e.changedTouches[0].screenY;
-            }
-        }, false);
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, {passive: false});
 
         window.addEventListener('touchend', e => {
-            if (gameRunning) {
-                let touchEndX = e.changedTouches[0].screenX;
-                let touchEndY = e.changedTouches[0].screenY;
-                handleSwipe(touchEndX - touchStartX, touchEndY - touchStartY);
-            }
-        }, false);
+            let touchEndX = e.changedTouches[0].screenX;
+            let touchEndY = e.changedTouches[0].screenY;
+            handleSwipe(touchEndX - touchStartX, touchEndY - touchStartY);
+        }, {passive: false});
 
         function handleSwipe(x, y) {
+            const minSwipeLen = 30; // ignore small accidental taps
             if (Math.abs(x) > Math.abs(y)) {
+                if (Math.abs(x) < minSwipeLen) return;
                 if (x > 0 && dx === 0) { nextDx = 1; nextDy = 0; } // Right
                 else if (x < 0 && dx === 0) { nextDx = -1; nextDy = 0; } // Left
             } else {
+                if (Math.abs(y) < minSwipeLen) return;
                 if (y > 0 && dy === 0) { nextDx = 0; nextDy = 1; } // Down
                 else if (y < 0 && dy === 0) { nextDx = 0; nextDy = -1; } // Up
             }
         }
+        
+        // Keyboard support for desktop testing
+        window.addEventListener('keydown', e => {
+            if (e.key === "ArrowUp" && dy === 0) { nextDx = 0; nextDy = -1; }
+            if (e.key === "ArrowDown" && dy === 0) { nextDx = 0; nextDy = 1; }
+            if (e.key === "ArrowLeft" && dx === 0) { nextDx = -1; nextDy = 0; }
+            if (e.key === "ArrowRight" && dx === 0) { nextDx = 1; nextDy = 0; }
+        });
 
-        // START SCREEN
-        createFood();
-        startBtn.addEventListener("click", startGame);
     </script>
 </body>
 </html>
