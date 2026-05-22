@@ -106,9 +106,8 @@
         let gameRunning = false;
         let gameLoopTimeout;
 
-        // LOAD UNIVERSITY ICON
+        // LOAD UNIVERSITY ICON (optional - will use red square as fallback)
         const uniIcon = new Image();
-        // Replace this URL with your university's logo
         uniIcon.src = "https://upload.wikimedia.org/wikipedia/en/thumb/3/3a/Harvard_University_coat_of_arms.svg/200px-Harvard_University_coat_of_arms.svg.png";
 
         function startGame() {
@@ -204,12 +203,9 @@
         }
 
         function drawFood() {
-            if (uniIcon.complete) {
-                ctx.drawImage(uniIcon, food.x * gridSize, food.y * gridSize, gridSize, gridSize);
-            } else {
-                ctx.fillStyle = "red";
-                ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
-            }
+            // Draw a red square as food (reliable fallback)
+            ctx.fillStyle = "#FF6B6B";
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
         }
 
         // SWIPE CONTROLS
