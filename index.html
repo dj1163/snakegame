@@ -76,7 +76,7 @@
     
     <div id="game-container">
         <div id="overlay">
-            <h1 id="status-text">University Snake</h1>
+            <h1 id="status-text">Snake Game</h1>
             <button id="startBtn">START GAME</button>
         </div>
         <canvas id="gameCanvas"></canvas>
@@ -107,17 +107,17 @@
         let gameLoopTimeout;
         let logoLoaded = false;
 
-        // Load University Logo
-        const uniLogo = new Image();
-        uniLogo.crossOrigin = "anonymous";
-        uniLogo.src = "https://www.ucla.edu/img/logo-ucla.svg";
-        uniLogo.onload = () => {
+        // Load Logo
+        const logo = new Image();
+        logo.crossOrigin = "anonymous";
+        logo.src = "https://modolabs.com/wp-content/webp-express/webp-images/uploads/2025/08/Modo_stacked-white-1024x670.png.webp";
+        logo.onload = () => {
             logoLoaded = true;
-            console.log("UCLA logo loaded successfully");
+            console.log("Logo loaded successfully");
         };
-        uniLogo.onerror = () => {
+        logo.onerror = () => {
             logoLoaded = false;
-            console.log("Failed to load UCLA logo, will use red square");
+            console.log("Failed to load logo, will use red square");
         };
 
         function startGame() {
@@ -202,10 +202,10 @@
         }
 
         function drawFood() {
-            // Draw UCLA logo if loaded, otherwise draw red square
+            // Draw logo if loaded, otherwise draw red square
             if (logoLoaded) {
                 try {
-                    ctx.drawImage(uniLogo, food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+                    ctx.drawImage(logo, food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
                 } catch (e) {
                     // Fallback to red square if drawing fails
                     ctx.fillStyle = "#FF6B6B";
