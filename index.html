@@ -35,6 +35,32 @@
             margin-bottom: 10px;
             font-size: 24px;
         }
+        /* Overlay for the Start/Game Over screen */
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #3e8e41;
+        }
     </style>
 </head>
 <body>
@@ -43,6 +69,10 @@
     
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
+        <div id="overlay">
+            <h1>University Snake</h1>
+            <button id="startBtn">Start Game</button>
+        </div>
     </div>
 
     <p style="font-size: 12px; margin-top: 10px;">Swipe to move</p>
@@ -51,6 +81,8 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const scoreElement = document.getElementById("score-board");
+        const overlay = document.getElementById("overlay");
+        const startBtn = document.getElementById("startBtn");
 
         // CONFIGURATION
         const gridSize = 20; // Internal logical units
@@ -64,6 +96,7 @@
         let dy = -1;
         let nextDx = 0;
         let nextDy = -1;
+        let gameRunning = false;
 
         // UNIVERSITY ICON
         const uniIcon = new Image();
@@ -72,17 +105,21 @@
 
         // GAME LOOP
         function main() {
+            if (!gameRunning) return;
+
             if (didGameEnd()) {
-                alert("Game Over! Score: " + score);
-                resetGame();
+                gameRunning = false;
+                showGameOver();
             }
 
             setTimeout(function onTick() {
-                clearCanvas();
-                drawFood();
-                advanceSnake();
-                drawSnake();
-                main();
+                if (gameRunning) {
+                    clearCanvas();
+                    drawFood();
+                    advanceSnake();
+                    drawSnake();
+                    main();
+                }
             }, 100);
         }
 
@@ -140,7 +177,21 @@
             scoreElement.innerHTML = "Score: 0";
             snake = [{x: 10, y: 10}, {x: 10, y: 11}, {x: 10, y: 12}];
             nextDx = 0; nextDy = -1;
+            dx = 0; dy = -1;
             createFood();
+        }
+
+        function startGame() {
+            resetGame();
+            gameRunning = true;
+            overlay.style.display = "none";
+            main();
+        }
+
+        function showGameOver() {
+            overlay.style.display = "flex";
+            overlay.innerHTML = `<h1>Game Over!</h1><p>Score: ${score}</p><button id="restartBtn">Play Again</button>`;
+            document.getElementById("restartBtn").addEventListener("click", startGame);
         }
 
         // TOUCH CONTROLS (Swipe Detection)
@@ -148,14 +199,18 @@
         let touchStartY = 0;
 
         window.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
+            if (gameRunning) {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }
         }, false);
 
         window.addEventListener('touchend', e => {
-            let touchEndX = e.changedTouches[0].screenX;
-            let touchEndY = e.changedTouches[0].screenY;
-            handleSwipe(touchEndX - touchStartX, touchEndY - touchStartY);
+            if (gameRunning) {
+                let touchEndX = e.changedTouches[0].screenX;
+                let touchEndY = e.changedTouches[0].screenY;
+                handleSwipe(touchEndX - touchStartX, touchEndY - touchStartY);
+            }
         }, false);
 
         function handleSwipe(x, y) {
@@ -168,9 +223,9 @@
             }
         }
 
-        // START GAME
+        // START SCREEN
         createFood();
-        main();
+        startBtn.addEventListener("click", startGame);
     </script>
 </body>
 </html>
