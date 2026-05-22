@@ -105,6 +105,20 @@
         let nextDy = 0;
         let gameRunning = false;
         let gameLoopTimeout;
+        let logoLoaded = false;
+
+        // Load University Logo
+        const uniLogo = new Image();
+        uniLogo.crossOrigin = "anonymous";
+        uniLogo.src = "https://www.ucla.edu/img/logo-ucla.svg";
+        uniLogo.onload = () => {
+            logoLoaded = true;
+            console.log("UCLA logo loaded successfully");
+        };
+        uniLogo.onerror = () => {
+            logoLoaded = false;
+            console.log("Failed to load UCLA logo, will use red square");
+        };
 
         function startGame() {
             score = 0;
@@ -188,8 +202,20 @@
         }
 
         function drawFood() {
-            ctx.fillStyle = "#FF6B6B";
-            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+            // Draw UCLA logo if loaded, otherwise draw red square
+            if (logoLoaded) {
+                try {
+                    ctx.drawImage(uniLogo, food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+                } catch (e) {
+                    // Fallback to red square if drawing fails
+                    ctx.fillStyle = "#FF6B6B";
+                    ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+                }
+            } else {
+                // Draw red square as fallback
+                ctx.fillStyle = "#FF6B6B";
+                ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+            }
         }
 
         // Touch Controls
